@@ -1,9 +1,8 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { supabase, chatService } from '../lib/supabase';
-import { Send, Paperclip, MoreVertical, File, FilesIcon } from 'lucide-react';
+import { FilesIcon, MoreVertical, Paperclip, Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { chatService, supabase } from '../lib/supabase';
 import { uploadFile } from '../utils/utils';
-import { Image } from 'next/image';
 export default function Chat({ conversationId, currentUser, onClose = null }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -21,30 +20,31 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
   const isAdmin = currentUser?.role === 'admin';
   const otherUser = isAdmin ? conversation?.user : null;
 
-  const loadConversation = async () => {
-    try {
-      const data = await chatService.getConversationWithMessages(conversationId);
-      setConversation(data);
-      setMessages(data.messages || []);
-    } catch (error) {
-      console.error('Error loading conversation:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const subscribeToMessages = () => {
-    subscriptionRef.current = chatService.subscribeToMessages(
-      conversationId,
-      (newMessage) => {
-        setMessages((prev) => [...prev, newMessage]);
-        setIsTyping(false);
-      }
-    );
-  };
 
   useEffect(() => {
     if (conversationId) {
+
+      const loadConversation = async () => {
+        try {
+          const data = await chatService.getConversationWithMessages(conversationId);
+          setConversation(data);
+          setMessages(data.messages || []);
+        } catch (error) {
+          console.error('Error loading conversation:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      const subscribeToMessages = () => {
+        subscriptionRef.current = chatService.subscribeToMessages(
+          conversationId,
+          (newMessage) => {
+            setMessages((prev) => [...prev, newMessage]);
+            setIsTyping(false);
+          }
+        );
+      };
+
       loadConversation();
       subscribeToMessages();
     }
@@ -53,7 +53,7 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
         subscriptionRef.current.unsubscribe();
       }
     };
-  }, [conversationId, loadConversation, subscribeToMessages]);
+  }, [conversationId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -286,7 +286,8 @@ function FilePreview({ filePath, getSignedUrl }) {
   if (isImage) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={url}
           alt={fileName}
           className="max-w-[200px] max-h-[200px] rounded-lg border shadow-sm hover:opacity-90 transition"

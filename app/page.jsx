@@ -17,7 +17,7 @@ export default function Home() {
                 <span className="text-xl font-bold text-gray-900">ChatApp</span>
               </div>
 
-              <div className="flex items-center space-x-4">
+              {/* <div className="flex items-center space-x-4">
                 <Link
                   href="/chat"
                   className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium"
@@ -30,7 +30,7 @@ export default function Home() {
                 >
                   Company Login
                 </Link>
-              </div>
+              </div> */}
             </div>
           </div>
         </nav>
@@ -52,16 +52,10 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/chat"
+                href="#live-demo"
                 className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 Try Live Chat
-              </Link>
-              <Link
-                href="/company"
-                className="bg-white text-gray-700 px-8 py-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Company Demo
               </Link>
             </div>
           </div>
@@ -119,7 +113,7 @@ export default function Home() {
           </div>
 
           {/* Demo Preview */}
-          <div className="mt-20 bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+          <div className="mt-20 bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden" id="live-demo">
             <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-6">
               <h2 className="text-2xl font-bold text-white text-center">
                 Live Demo
@@ -156,8 +150,16 @@ export default function Home() {
                   Support Dashboard
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Login as company to manage customer conversations
+                  Login as company to manage customer conversations. Use the credentials below.
                 </p>
+                <div className="mb-4">
+                  <span className="font-semibold text-gray-700">Email:</span>{' '}
+                  <span className="text-gray-600">phaedra@floodment.com</span>
+                </div>
+                <div className="mb-4">
+                  <span className="font-semibold text-gray-700">Password:</span>{' '}
+                  <span className="text-gray-600">123456</span>
+                </div>
                 <Link
                   href="/company"
                   className="inline-block bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"

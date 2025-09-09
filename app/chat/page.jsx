@@ -12,28 +12,25 @@ export default function UserChatPage() {
   const [loading, setLoading] = useState(true);
   const [chatStarted, setChatStarted] = useState(false);
 
-
-  const getUser = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        // Check if user already has a conversation
-        await checkExistingConversation(user.id);
-      }
-    } catch (error) {
-      console.error('Error getting user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
   useEffect(() => {
-    getUser();
-  }, [getUser]);
+    const getUser = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          setUser(user);
+          // Check if user already has a conversation
+          await checkExistingConversation(user.id);
+        }
+      } catch (error) {
+        console.error('Error getting user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+      getUser();
+  }, []);
 
   const checkExistingConversation = async (userId) => {
     try {

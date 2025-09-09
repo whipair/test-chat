@@ -7,13 +7,16 @@ import { supabase } from '../lib/supabase';
 
 export const FloatingChatClientWrapper: React.FC = () => {
 
-
+    const [user, setUser] = useState(null);
     const setCurrentUser = useUserStore((state) => state.setCurrentUser);
 
     useEffect(() => {
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) setCurrentUser(user);
+            if (user) {
+                setUser(user);
+                setCurrentUser(user);
+            }
         };
         fetchUser();
     }, [setCurrentUser]);
@@ -21,6 +24,6 @@ export const FloatingChatClientWrapper: React.FC = () => {
 
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
-    if (!mounted) return null;
+    if (!mounted || !user) return null;
     return <FloatingChat />;
 }
