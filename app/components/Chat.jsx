@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase, chatService } from '../lib/supabase';
 import { Send, Paperclip, MoreVertical, File, FilesIcon } from 'lucide-react';
 import { uploadFile } from '../utils/utils';
-
+import { Image } from 'next/image';
 export default function Chat({ conversationId, currentUser, onClose = null }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -20,22 +20,6 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
 
   const isAdmin = currentUser?.role === 'admin';
   const otherUser = isAdmin ? conversation?.user : null;
-
-  useEffect(() => {
-    if (conversationId) {
-      loadConversation();
-      subscribeToMessages();
-    }
-    return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-      }
-    };
-  }, [conversationId, loadConversation, subscribeToMessages]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const loadConversation = async () => {
     try {
@@ -58,6 +42,23 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
       }
     );
   };
+
+  useEffect(() => {
+    if (conversationId) {
+      loadConversation();
+      subscribeToMessages();
+    }
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+      }
+    };
+  }, [conversationId, loadConversation, subscribeToMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
 
   const sendMessage = async (e) => {
     e.preventDefault();

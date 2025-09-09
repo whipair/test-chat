@@ -19,13 +19,7 @@ export default function CompanyDashboard() {
     getUser();
   }, []);
 
-  // Load conversations after user is set
-  useEffect(() => {
-    if (user) {
-      loadConversations();
-      subscribeToConversations();
-    }
-  }, [user, subscribeToConversations]);
+
 
   const getUser = async () => {
     try {
@@ -86,6 +80,14 @@ export default function CompanyDashboard() {
       messageChannel.unsubscribe();
     };
   };
+
+  // Load conversations after user is set
+  useEffect(() => {
+    if (user) {
+      loadConversations();
+      subscribeToConversations();
+    }
+  }, [user, subscribeToConversations]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -222,11 +224,10 @@ export default function CompanyDashboard() {
                 <button
                   key={status}
                   onClick={() => setFilterStatus(status)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    filterStatus === status
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterStatus === status
                       ? 'bg-indigo-100 text-indigo-700'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </button>
@@ -246,11 +247,10 @@ export default function CompanyDashboard() {
                 <div
                   key={conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
-                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversation?.id === conversation.id
+                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${selectedConversation?.id === conversation.id
                       ? 'bg-indigo-50 border-indigo-200'
                       : ''
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-3">

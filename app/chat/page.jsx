@@ -12,9 +12,6 @@ export default function UserChatPage() {
   const [loading, setLoading] = useState(true);
   const [chatStarted, setChatStarted] = useState(false);
 
-  useEffect(() => {
-    getUser();
-  }, [getUser]);
 
   const getUser = async () => {
     try {
@@ -32,6 +29,11 @@ export default function UserChatPage() {
       setLoading(false);
     }
   };
+
+
+  useEffect(() => {
+    getUser();
+  }, [getUser]);
 
   const checkExistingConversation = async (userId) => {
     try {
