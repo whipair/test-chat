@@ -29,7 +29,7 @@ export default function UserChatPage() {
         setLoading(false);
       }
     };
-      getUser();
+    getUser();
   }, []);
 
   const checkExistingConversation = async (userId) => {
@@ -72,6 +72,48 @@ export default function UserChatPage() {
     setConversation(null);
     setChatStarted(false);
   };
+
+
+  const loadConversations = async () => {
+    try {
+      const data = await chatService.getCompanyConversations();
+      setConversations(data);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadConversations();
+      const subscribeToConversations = () => {
+        const conversationChannel = supabase
+          .channel('conversations')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'conversations' },
+            loadConversations
+          )
+          .subscribe();
+
+        const messageChannel = supabase
+          .channel('messages')
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages' },
+            loadConversations
+          )
+          .subscribe();
+
+        return () => {
+          conversationChannel.unsubscribe();
+          messageChannel.unsubscribe();
+        };
+      };
+
+      subscribeToConversations();
+    }
+  }, [user]);
 
 
   if (loading) {
