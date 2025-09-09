@@ -31,7 +31,7 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
         subscriptionRef.current.unsubscribe();
       }
     };
-  }, [conversationId]);
+  }, [conversationId, loadConversation, subscribeToMessages]);
 
   useEffect(() => {
     scrollToBottom();
@@ -285,7 +285,7 @@ function FilePreview({ filePath, getSignedUrl }) {
   if (isImage) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer">
-        <img
+        <Image
           src={url}
           alt={fileName}
           className="max-w-[200px] max-h-[200px] rounded-lg border shadow-sm hover:opacity-90 transition"

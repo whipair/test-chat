@@ -25,7 +25,7 @@ export default function CompanyDashboard() {
       loadConversations();
       subscribeToConversations();
     }
-  }, [user]);
+  }, [user, subscribeToConversations]);
 
   const getUser = async () => {
     try {

@@ -16,7 +16,7 @@ export const FloatingChatClientWrapper: React.FC = () => {
             if (user) setCurrentUser(user);
         };
         fetchUser();
-    }, []);
+    }, [setCurrentUser]);
 
 
     const [mounted, setMounted] = useState(false);

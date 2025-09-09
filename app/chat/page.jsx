@@ -14,7 +14,7 @@ export default function UserChatPage() {
 
   useEffect(() => {
     getUser();
-  }, []);
+  }, [getUser]);
 
   const getUser = async () => {
     try {
@@ -98,7 +98,7 @@ export default function UserChatPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Need Help?</h1>
 
           <p className="text-gray-600 mb-8">
-            Start a conversation with our support team. We're here to help you
+            Start a conversation with our support team. We are here to help you
             with any questions or issues.
           </p>
 
