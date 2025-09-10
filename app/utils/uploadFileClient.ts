@@ -45,7 +45,7 @@ export async function uploadFile(file, userId, conversationId) {
 
       // append all returned fields (policy, signature, key, etc.)
       Object.entries(presignResp.fields).forEach(([k, v]) => {
-        form.append(k, v);
+        form.append(k, String(v));
       });
 
       // append file last (field name usually 'file')
