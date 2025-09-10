@@ -1,13 +1,21 @@
 'use client';
-import { FilesIcon, MoreVertical, Paperclip, Send } from 'lucide-react';
+import { ArrowLeft, File, FilesIcon, MoreVertical, Paperclip, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { chatService, supabase } from '../lib/supabase';
-import { uploadFile } from '../utils/utils';
-export default function Chat({ conversationId, currentUser, onClose = null }) {
+import { getSignedUrl, uploadFile } from '../utils/uploadFileClient';
+
+export default function Chat({
+  conversationId,
+  conversation: initialConversation,
+  currentUser,
+  onClose = null,
+  onBack,
+  showBackButton = false,
+}) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [conversation, setConversation] = useState(null);
+  const [conversation, setConversation] = useState(initialConversation || null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const subscriptionRef = useRef(null);
@@ -17,48 +25,105 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Prefer role provided on currentUser (FloatingChat should pass profile.role)
   const isAdmin = currentUser?.role === 'admin';
-  const otherUser = isAdmin ? conversation?.user : null;
 
+  // Robust resolver for the "other user"
+  const getOtherUser = (conv) => {
+    if (!conv) return null;
+
+    if (conv.user && conv.user.id !== currentUser?.id) return conv.user;
+
+    if (Array.isArray(conv.participants)) {
+      const p = conv.participants.find((x) => x.id !== currentUser?.id);
+      if (p) return p;
+    }
+
+    if (conv.latest_message?.sender && conv.latest_message.sender.id !== currentUser?.id) {
+      return conv.latest_message.sender;
+    }
+
+    const lastNonMe = (conv.messages || []).slice().reverse().find(m => m.sender_id !== currentUser?.id && m.sender);
+    if (lastNonMe) return lastNonMe.sender;
+
+    return null;
+  };
+
+  const otherUser = isAdmin ? getOtherUser(conversation) : null;
+
+  // helper: set messages but dedupe by id
+  const setMessagesDeduped = (next) => {
+    setMessages((prev) => {
+      const map = new Map();
+      [...prev, ...next].forEach(m => { if (m && m.id != null) map.set(String(m.id), m); });
+      const arr = Array.from(map.values()).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      return arr;
+    });
+  };
 
   useEffect(() => {
-    if (conversationId) {
+    if (!conversationId) return;
 
-      const loadConversation = async () => {
-        try {
-          const data = await chatService.getConversationWithMessages(conversationId);
-          setConversation(data);
-          setMessages(data.messages || []);
-        } catch (error) {
-          console.error('Error loading conversation:', error);
-        } finally {
+    let mounted = true;
+    let subscription = null;
+
+    const loadConversation = async () => {
+      try {
+        // if parent passed conversation AND it already contains messages -> use it
+        const hasMessages = Array.isArray(initialConversation?.messages) && initialConversation.messages.length > 0;
+        if (initialConversation && initialConversation.id === conversationId && hasMessages) {
+          setConversation(initialConversation);
+          setMessages(initialConversation.messages || []);
           setLoading(false);
+          return;
         }
-      };
-      const subscribeToMessages = () => {
-        subscriptionRef.current = chatService.subscribeToMessages(
-          conversationId,
-          (newMessage) => {
-            setMessages((prev) => [...prev, newMessage]);
-            setIsTyping(false);
-          }
-        );
-      };
 
-      loadConversation();
-      subscribeToMessages();
-    }
-    return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
+        // otherwise fetch the full conversation with messages
+        const data = await chatService.getConversationWithMessages(conversationId);
+        if (!mounted) return;
+        setConversation(data);
+        setMessages(data.messages || []);
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
+
+    const subscribe = () => {
+      try {
+        subscription = chatService.subscribeToMessages(conversationId, (newRow) => {
+          // ensure we have a normalized message object
+          if (!newRow) return;
+          // sometimes payload has .new vs full row; normalize if needed
+          const message = newRow.new ? newRow.new : newRow;
+          // append deduped
+          setMessagesDeduped([message]);
+          setIsTyping(false);
+        });
+        subscriptionRef.current = subscription;
+      } catch (err) {
+        console.error('subscribe error', err);
+      }
+    };
+
+    loadConversation();
+    subscribe();
+
+    return () => {
+      mounted = false;
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        try { subscription.unsubscribe(); } catch (e) { /* ignore */ }
+      }
+      subscriptionRef.current = null;
+    };
+    // intentionally only depend on conversationId so changing initialConversation doesn't cancel subscribes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -78,34 +143,36 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
   };
 
   async function handleFileUpload(e) {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      const { signedUrl, message } = await uploadFile(
-        file,
-        currentUser.id,
-        conversationId
-      );
+      // optional: show a subtle UI indicator if you want
+      // call the client helper which uploads to e2 and inserts the DB row
+      const { signedUrl, message } = await uploadFile(file, currentUser.id, conversationId);
 
-      console.log("Messaggio salvato:", message);
-      console.log("URL firmato:", signedUrl);
+      // optimistically add the new message to the UI (deduped)
+      if (message) {
+        setMessagesDeduped([message]);
+        // Scroll down after inserting
+        setTimeout(() => scrollToBottom(), 50);
+      }
+
+      console.log('Messaggio salvato:', message);
+      console.log('URL firmato:', signedUrl);
+
+      // reset file input so user can re-upload same file if needed
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (err) {
-      alert("Errore durante upload: " + err.message);
+      console.error('Errore durante upload:', err);
+      alert('Errore durante upload: ' + (err?.message || err));
+      // reset input on error too so user can retry
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
-  const getSignedUrl = async (filePath) => {
-    const { data, error } = await supabase.storage
-      .from('chat-attachments')
-      .createSignedUrl(filePath, 60 * 60); // valido 1h
-
-    if (error) {
-      console.error('Error creating signed URL:', error);
-      return null;
-    }
-    return data.signedUrl;
-  };
 
   const formatTime = (timestamp) =>
     new Date(timestamp).toLocaleTimeString('en-US', {
@@ -142,15 +209,26 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
+      {/* Header with integrated back button */}
       <div className="flex items-center justify-between p-4 border-b bg-gray-50">
         <div className="flex items-center space-x-3">
+          {showBackButton && onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+              aria-label="Back to conversations"
+            >
+              <ArrowLeft size={20} className="text-gray-600" />
+            </button>
+          )}
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-            {otherUser?.full_name?.[0]?.toUpperCase() || 'U'}
+            {isAdmin ? (otherUser?.full_name?.[0]?.toUpperCase() || 'U') : 'S'}
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">
-              {isAdmin ? otherUser?.full_name : 'Support'}
+              {isAdmin
+                ? (otherUser?.full_name || 'Unknown User')
+                : 'Support'}
             </h3>
             <p className="text-sm text-gray-500">
               {conversation?.status === 'active' ? 'Active' : 'Pending'}
@@ -189,8 +267,7 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
               )}
               <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse space-x-reverse' : ''
-                    }`}
+                  className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}
                 >
                   {!isOwn && (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
@@ -203,15 +280,13 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
                       : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                       }`}
                   >
-                    {message.message_type === "file" ? (
+                    {message.message_type === 'file' ? (
                       <FilePreview filePath={message.file_url} getSignedUrl={getSignedUrl} />
                     ) : (
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     )}
                     <p
-                      className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'
-                        }`}
-                    >
+                      className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
                       {formatTime(message.created_at)}
                     </p>
                   </div>
@@ -234,7 +309,7 @@ export default function Chat({ conversationId, currentUser, onClose = null }) {
           />
           <button
             type="button"
-            onClick={() => fileInputRef.current.click()}
+            onClick={() => fileInputRef.current?.click()}
             className="p-2 hover:bg-gray-200 rounded-full text-gray-500"
           >
             <Paperclip size={20} />
@@ -313,7 +388,6 @@ function FilePreview({ filePath, getSignedUrl }) {
     );
   }
 
-
   return (
     <a
       href={url}
@@ -322,7 +396,7 @@ function FilePreview({ filePath, getSignedUrl }) {
       className="flex items-center space-x-2 text-blue-600 hover:underline"
     >
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M14 2H6a2 2 0 ..."></path>
+        <File size={20} />
       </svg>
       <span>{fileName}</span>
     </a>

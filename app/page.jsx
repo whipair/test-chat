@@ -1,8 +1,34 @@
 // pages/index.js
+'use client';
 import Link from 'next/link';
 import { MessageCircle, Users, Shield, Zap } from 'lucide-react';
+import { supabase } from './lib/supabase';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          setUser(user);
+        }
+      } catch (error) {
+        console.error('Error getting user:', error);
+      } finally {
+      }
+    };
+    getUser();
+  }, []);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -10,11 +36,22 @@ export default function Home() {
         <nav className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="text-white" size={24} />
+              <div className="flex items-center justify-between space-x-3 w-full">
+                <div className="flex items-center space-x-2">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                    <MessageCircle className="text-white" size={24} />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">ChatApp</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">ChatApp</span>
+                {user && (
+                  <button
+                    onClick={signOut}
+                    className="bg-gray-400 bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                )}
+
               </div>
 
               {/* <div className="flex items-center space-x-4">
