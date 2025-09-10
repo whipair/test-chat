@@ -1,7 +1,7 @@
 // pages/index.js
 'use client';
 import Link from 'next/link';
-import { MessageCircle, Users, Shield, Zap } from 'lucide-react';
+import { MessageCircle, Users, Shield, Zap, ArrowLeft } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useEffect, useState } from 'react';
 
@@ -27,6 +27,7 @@ export default function Home() {
   }, []);
   const signOut = async () => {
     await supabase.auth.signOut();
+    window.location.reload();
   };
 
   return (
@@ -169,8 +170,16 @@ export default function Home() {
                   Customer Chat
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Sign up as a customer and start a conversation with support
+                  Log in or Sign up as a customer and start a conversation with support
                 </p>
+                <div className="mb-4">
+                  <span className="font-semibold text-gray-700">Email:</span>{' '}
+                  <span className="text-gray-600">veerf3@floodment.com</span>
+                </div>
+                <div className="mb-4">
+                  <span className="font-semibold text-gray-700">Password:</span>{' '}
+                  <span className="text-gray-600">123456</span>
+                </div>
                 <Link
                   href="/chat"
                   className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
@@ -180,6 +189,11 @@ export default function Home() {
               </div>
 
               <div className="text-center">
+                <div className="flex justify-center">
+                  <Link href={"/"} >
+                    <ArrowLeft />
+                  </Link>
+                </div>
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="text-purple-500" size={32} />
                 </div>

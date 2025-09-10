@@ -1,10 +1,11 @@
 // pages/company.js
 'use client';
-import { CheckCircle, Clock, MessageSquare, Search, Users } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, MessageSquare, Search, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AuthComponent from '../components/AuthComponent';
 import Chat from '../components/Chat';
 import { chatService, supabase } from '../lib/supabase';
+import Link from 'next/link';
 
 export default function CompanyDashboard() {
   const [user, setUser] = useState(null);
@@ -179,6 +180,11 @@ export default function CompanyDashboard() {
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          <div className="flex justify-center ">
+            <Link href={"/"} >
+              <ArrowLeft />
+            </Link>
+          </div>
           <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-lg flex items-center justify-center">
             <Users className="text-white" size={24} />
           </div>
@@ -269,7 +275,7 @@ export default function CompanyDashboard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    {/* <div className="flex items-center space-x-2">
                       <span
                         className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                           conversation.status
@@ -278,7 +284,7 @@ export default function CompanyDashboard() {
                         {getStatusIcon(conversation.status)}
                         <span>{conversation.status}</span>
                       </span>
-                    </div>
+                    </div> */}
                   </div>
 
                   {conversation.latest_message && (
@@ -289,14 +295,14 @@ export default function CompanyDashboard() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  {/* <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>{formatTime(conversation.updated_at)}</span>
                     {conversation.status === 'pending' && (
                       <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-medium">
                         New
                       </span>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               ))
             )}

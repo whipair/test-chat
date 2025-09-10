@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { supabase, chatService } from '../lib/supabase';
 import Chat from '../components/Chat';
 import AuthComponent from '../components/AuthComponent';
-import { MessageCircle, Headphones } from 'lucide-react';
+import { MessageCircle, Headphones, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function UserChatPage() {
   const [user, setUser] = useState(null);
   const [conversation, setConversation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chatStarted, setChatStarted] = useState(false);
+  const [conversations, setConversations] = useState([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -18,6 +20,18 @@ export default function UserChatPage() {
         const {
           data: { user },
         } = await supabase.auth.getUser();
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.role === 'admin') {
+          // Redirect normal users to user chat
+          window.location.href = '/company';
+        }
+
         if (user) {
           setUser(user);
           // Check if user already has a conversation
@@ -166,6 +180,11 @@ export default function UserChatPage() {
     <div className="h-screen flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-4 flex justify-between items-center">
+        <div className="flex justify-center">
+          <Link href={"/"} >
+            <ArrowLeft />
+          </Link>
+        </div>
         <h1 className="text-xl font-semibold">Support Chat</h1>
         <button
           onClick={signOut}
@@ -181,6 +200,6 @@ export default function UserChatPage() {
           <Chat conversationId={conversation.id} currentUser={user} />
         </div>
       </div>
-    </div>
+    </div >
   );
 }
